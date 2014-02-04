@@ -1,0 +1,16 @@
+<configuration debug="true" scan="true" scanPeriod="5 seconds">
+    <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>%d{HH:mm:ss.SSS} %-5level %logger{36} - %msg%n</pattern>
+        </encoder>
+    </appender>
+
+    <logger name="spray.can" level="info"/>
+    <logger name="akka" level="info"/>
+    <logger name="ch.qos.logback" level="off"/>
+    <logger name="net.lockney" level="debug"/>
+
+    <root level="debug">
+        <appender-ref ref="STDOUT" />
+    </root>
+</configuration>
