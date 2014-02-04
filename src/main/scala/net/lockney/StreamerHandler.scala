@@ -25,9 +25,11 @@ class StreamerHandler extends OAuthTwitterAuthorization with Actor with ActorLog
   val io = IO(Http)(context.system)
   val sendToSelf = sendTo(io).withResponsesReceivedBy(self)
   val retryDelay = 1.seconds
+  lazy val streamUrl = context.system.settings.config.getConfig("tweet.er.er").getString("streamUrl")
 
   implicit val ec = context.dispatcher
 
+  // handy debugging help -- returns the same curl command Twitter shows in their docs
   val requestLogger = { req: HttpRequest =>
     log.debug(s"""Curl: curl --get '${req.uri}' --header '${req.headers.head}' --verbose""")
   }
@@ -46,14 +48,13 @@ class StreamerHandler extends OAuthTwitterAuthorization with Actor with ActorLog
       context.system.scheduler.scheduleOnce(retryDelay, self, RequestStream)
 
     case huh =>
-      log.debug("What is this? {} (class: {})", huh, huh.getClass.getCanonicalName)
+      log.debug("What is this thing? {} (class: {})", huh, huh.getClass.getCanonicalName)
   }
 
   def awaitingResponse: Receive = {
-    log.debug("awaiting response")
     ({
       case ChunkedResponseStart(_) =>
-        log.info("Stream handling has begun.")
+        log.debug("Stream handling has begun.")
 
       case MessageChunk(entity, _) =>
         try {
@@ -67,8 +68,8 @@ class StreamerHandler extends OAuthTwitterAuthorization with Actor with ActorLog
         self ! RequestStream
         context become waiting
 
+      // This *shouldn't* happen, but stranger things have been known to occur -- saw some weirdness in testing
       case res: HttpResponse =>
-        log.debug("Received: {}", res)
         self ! RequestStream
         context become waiting
 
@@ -76,9 +77,8 @@ class StreamerHandler extends OAuthTwitterAuthorization with Actor with ActorLog
 
   def waiting: Receive = ({
       case RequestStream =>
-        log.debug("Requesting the stream")
         context become awaitingResponse
-        sendToSelf(Get("https://stream.twitter.com/1.1/statuses/sample.json") ~> authorize ~> logRequest
+        sendToSelf(Get(streamUrl) ~> authorize ~> logRequest
           (requestLogger))
     }: Receive) orElse handleFailures
 }

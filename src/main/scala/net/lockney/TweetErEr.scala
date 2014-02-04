@@ -31,6 +31,8 @@ object TweetErEr extends OAuthTwitterAuthorization {
 
     implicit val futureTimeout: Timeout = 60.seconds
 
+    val config = system.settings.config.getConfig("tweet.er.er")
+
     val io = IO(Http)
 
     // these should really get proper supervision, but given the nature of this work,
@@ -38,7 +40,9 @@ object TweetErEr extends OAuthTwitterAuthorization {
     system.actorOf(Props[MetricsActor], MetricsActor.name)
     system.actorOf(Props[TweetAnalyzer].withRouter(FromConfig()), TweetAnalyzer.name)
     system.actorOf(Props[StreamerHandler], StreamerHandler.name)
-    io ! Http.Bind(system.actorOf(Props[Router], "router"), interface = "localhost", port = 8080)
+    io ! Http.Bind(system.actorOf(Props[Router], "router"),
+      interface = config.getString("host"),
+      port = config.getInt("port"))
 
   }
 }
