@@ -17,12 +17,11 @@ object StreamerHandler {
   case object RequestStream
 }
 
-class StreamerHandler extends OAuthTwitterAuthorization with Actor with ActorLogging {
+class StreamerHandler(io: ActorRef) extends OAuthTwitterAuthorization with Actor with ActorLogging {
 
   import StreamerHandler._
   import TwitterProtocol._
 
-  val io = IO(Http)(context.system)
   val sendToSelf = sendTo(io).withResponsesReceivedBy(self)
   val retryDelay = 1.seconds
   lazy val streamUrl = context.system.settings.config.getConfig("tweet.er.er").getString("streamUrl")
@@ -31,7 +30,7 @@ class StreamerHandler extends OAuthTwitterAuthorization with Actor with ActorLog
 
   // handy debugging help -- returns the same curl command Twitter shows in their docs
   val requestLogger = { req: HttpRequest =>
-    log.debug(s"""Curl: curl --get '${req.uri}' --header '${req.headers.head}' --verbose""")
+//    log.debug(s"""Curl: curl --get '${req.uri}' --header '${req.headers.head}' --verbose""")
   }
 
   // prime the pump
@@ -54,7 +53,6 @@ class StreamerHandler extends OAuthTwitterAuthorization with Actor with ActorLog
   def awaitingResponse: Receive = {
     ({
       case ChunkedResponseStart(_) =>
-        log.debug("Stream handling has begun.")
 
       case MessageChunk(entity, _) =>
         try {

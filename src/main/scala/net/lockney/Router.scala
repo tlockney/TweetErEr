@@ -17,7 +17,7 @@ class Router extends HttpServiceActor with SprayJsonSupport {
     } ~
     path("stats") {
       get {
-        complete(Metrics.getStats)
+        complete(MetricsActor.getStats)
       }
     }
   )

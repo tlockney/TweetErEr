@@ -39,7 +39,7 @@ object TweetErEr extends OAuthTwitterAuthorization {
     // it's neither worthwhile nor obvious where fault handling should go
     system.actorOf(Props[MetricsActor], MetricsActor.name)
     system.actorOf(Props[TweetAnalyzer].withRouter(FromConfig()), TweetAnalyzer.name)
-    system.actorOf(Props[StreamerHandler], StreamerHandler.name)
+    system.actorOf(Props(classOf[StreamerHandler], io), StreamerHandler.name)
     io ! Http.Bind(system.actorOf(Props[Router], "router"),
       interface = config.getString("host"),
       port = config.getInt("port"))

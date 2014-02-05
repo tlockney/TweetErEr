@@ -15,6 +15,7 @@ libraryDependencies ++= Seq(
   "com.codahale.metrics" % "metrics-core" % "3.0.1",
   akkaModule("actor"),
   akkaModule("slf4j"),
+  akkaModule("testkit") % "test",
   sprayModule("can"),
   sprayModule("routing"),
   sprayModule("client"),
