@@ -8,29 +8,27 @@ import scala.collection.mutable.TreeSet
 import java.util.concurrent.atomic.AtomicLong
 
 case class StatsSummary(
-                         totalTweets:       Long,
-                         tweetsPerSecond:   Double,
-                         tweetsPerMinute:   Double,
-                         tweetsPerHour:     Double,
-                         emojisSeen:        Long,
-                         emojiToTweetRatio: Double,
-                         urlsSeen:          Long,
-                         urlsToTweetRatio:  Double,
-                         pictureUrlRatio:   Double,
-                         topEmojis:         Set[(String, Long)],
-                         topHashtags:       Set[(String, Long)],
-                         topDomains:        Set[(String, Long)]
-                         )
+  totalTweets:       Long,
+  tweetsPerSecond:   Double,
+  tweetsPerMinute:   Double,
+  tweetsPerHour:     Double,
+  emojisSeen:        Long,
+  emojiToTweetRatio: Double,
+  urlsSeen:          Long,
+  urlsToTweetRatio:  Double,
+  pictureUrlRatio:   Double,
+  topEmojis:         Set[(String, Long)],
+  topHashtags:       Set[(String, Long)],
+  topDomains:        Set[(String, Long)]
+)
 
 object StatsSummaryProtocol extends DefaultJsonProtocol {
   implicit val statsSummaryFormat = jsonFormat12(StatsSummary)
 }
 
-object MetricsActor {
+object Metrics {
 
-  protected[this] class Stat(val name: String, var count: AtomicLong = new AtomicLong(1)) {
-    def currentCount = count.get
-  }
+  class Stat(val name: String, var count: AtomicLong = new AtomicLong(1))
 
   val name = "metrics"
 
@@ -50,13 +48,10 @@ object MetricsActor {
   private val hashtagStats = TreeSet[Stat]()
   private val urlStats     = TreeSet[Stat]()
 
-  private def counterFor(name: String) = registry.counter(name)
-  private def meterFor(name: String)   = registry.meter(MetricRegistry.name(name))
-
-  private lazy val tweetMeter  = meterFor("net.lockney.tweets.meter")
-  private lazy val emojisSeen  = counterFor("net.lockney.emojisSeen")
-  private lazy val urlsSeen    = counterFor("net.lockney.urlsSeen")
-  private lazy val picsSeen    = counterFor("net.lockney.picsSeen")
+  private lazy val tweetMeter  = registry.meter("net.lockney.tweets.meter")
+  private lazy val emojisSeen  = registry.counter("net.lockney.emojisSeen")
+  private lazy val urlsSeen    = registry.counter("net.lockney.urlsSeen")
+  private lazy val picsSeen    = registry.counter("net.lockney.picsSeen")
 
   private lazy val registry = {
     val reg = new MetricRegistry()
@@ -109,9 +104,9 @@ object MetricsActor {
     val urlRatio   = if (urlCount < 1) 0 else (urlCount / tweetCount.toDouble)
     val picRatio   = if (picCount < 1) 0 else (picCount / tweetCount.toDouble)
 
-    val topEmojis = emojiStats.take(5).map(s => (s.name, s.currentCount)).toSet
-    val topHashtags = hashtagStats.take(5).map( s => (s.name, s.currentCount)).toSet
-    val topDomains = urlStats.take(5).map(s => (s.name, s.currentCount)).toSet
+    val topEmojis = emojiStats.take(5).map(s => (s.name, s.count.get)).toSet
+    val topHashtags = hashtagStats.take(5).map( s => (s.name, s.count.get)).toSet
+    val topDomains = urlStats.take(5).map(s => (s.name, s.count.get)).toSet
 
     StatsSummary(
       tweetCount,
@@ -130,9 +125,9 @@ object MetricsActor {
   }
 }
 
-class MetricsActor extends Actor with ActorLogging {
+class Metrics extends Actor with ActorLogging {
 
-  import MetricsActor._
+  import Metrics._
 
   def receive = {
     case TweetSeen =>
@@ -146,7 +141,5 @@ class MetricsActor extends Actor with ActorLogging {
 
     case UrlSeen(url) =>
       countUrl(url)
-
-    case _ =>
   }
 }

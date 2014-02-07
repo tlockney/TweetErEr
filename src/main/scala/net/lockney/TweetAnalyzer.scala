@@ -12,11 +12,11 @@ class TweetAnalyzer extends Actor with ActorLogging {
 
   val emojiSet: List[(String, String)] = Emojis.all.map(e => (e.name, e.matchableString))
 
-  def metricsPath = context.actorSelection(s"/user/${MetricsActor.name}")
+  def metricsPath = context.actorSelection(s"/user/main/${Metrics.name}")
 
   def receive = {
     case Tweet(text, entities) =>
-      metricsPath ! MetricsActor.TweetSeen
+      metricsPath ! Metrics.TweetSeen
 
       // Check for emojis. This is an expensive way to do this, for a fully loaded system, it would make more sense to
       // use a smarted approach.
@@ -24,16 +24,16 @@ class TweetAnalyzer extends Actor with ActorLogging {
         case (name, chars) =>
           // yeah, regexs are heavy-handed here, but they make this relatively simple
           (new Regex(chars)).findFirstIn(text).foreach { _ =>
-            metricsPath ! MetricsActor.EmojiSeen(name)
+            metricsPath ! Metrics.EmojiSeen(name)
           }
       }
 
       entities.hashtags.map { tag =>
-        metricsPath ! MetricsActor.HashtagSeen(tag.text)
+        metricsPath ! Metrics.HashtagSeen(tag.text)
       }
 
       entities.urls.map { url =>
-        metricsPath ! MetricsActor.UrlSeen(new URL(url.expanded_url))
+        metricsPath ! Metrics.UrlSeen(new URL(url.expanded_url))
       }
 
     case _ =>

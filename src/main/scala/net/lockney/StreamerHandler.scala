@@ -1,12 +1,10 @@
 package net.lockney
 
+import scala.concurrent.duration._
 import akka.actor.{ActorRef, ActorLogging, Actor}
 import spray.http._
 import spray.client.pipelining._
-import akka.io.IO
-import spray.can.Http
 import spray.json.JsonParser
-import scala.concurrent.duration._
 import spray.http.HttpRequest
 import spray.http.ChunkedResponseStart
 
@@ -36,6 +34,8 @@ class StreamerHandler(io: ActorRef) extends OAuthTwitterAuthorization with Actor
   // prime the pump
   override def preStart = self ! RequestStream
 
+  context.setReceiveTimeout(30 seconds)
+
   // start out waiting for the RequestSteam message
   def receive = waiting
 
@@ -57,7 +57,7 @@ class StreamerHandler(io: ActorRef) extends OAuthTwitterAuthorization with Actor
       case MessageChunk(entity, _) =>
         try {
           val tweet = JsonParser(entity.asString).convertTo[Tweet]
-          context.actorSelection(s"/user/${TweetAnalyzer.name}") ! tweet
+          context.actorSelection(s"/user/main/${TweetAnalyzer.name}") ! tweet
         } catch {
           case e: Exception => // ignore anything not matching the expected format
         }
