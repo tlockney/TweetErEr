@@ -44,7 +44,7 @@ class MainActor extends Actor with ActorLogging {
   }
 
   // Yeah, it's not subtle, but... just restart everything for now.
-  override def supervisorStrategy: SupervisorStrategy = OneForOneStrategy(5, 30 seconds) {
+  override def supervisorStrategy: SupervisorStrategy = OneForOneStrategy(5, 30.seconds) {
     case _ => SupervisorStrategy.Restart
   }
 }

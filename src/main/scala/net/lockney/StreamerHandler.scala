@@ -1,7 +1,7 @@
 package net.lockney
 
 import scala.concurrent.duration._
-import akka.actor.{ActorRef, ActorLogging, Actor}
+import akka.actor.{ReceiveTimeout, ActorRef, ActorLogging, Actor}
 import spray.http._
 import spray.client.pipelining._
 import spray.json.JsonParser
@@ -34,12 +34,20 @@ class StreamerHandler(io: ActorRef) extends OAuthTwitterAuthorization with Actor
   // prime the pump
   override def preStart = self ! RequestStream
 
-  context.setReceiveTimeout(30 seconds)
+  context.setReceiveTimeout(30.seconds)
+
+  def reset() {
+    context become (waiting)
+    self ! RequestStream
+  }
 
   // start out waiting for the RequestSteam message
   def receive = waiting
 
   def handleFailures: Receive = {
+    case _: ReceiveTimeout =>
+
+
     case akka.actor.Status.Failure(e) =>
       log.debug("Failed trying to request stream: {}. Scheduling a retry in {} seconds", e.getMessage,
         retryDelay.toSeconds)
@@ -63,11 +71,6 @@ class StreamerHandler(io: ActorRef) extends OAuthTwitterAuthorization with Actor
         }
 
       case end: ChunkedMessageEnd =>
-        self ! RequestStream
-        context become waiting
-
-      // This *shouldn't* happen, but stranger things have been known to occur -- saw some weirdness in testing
-      case res: HttpResponse =>
         self ! RequestStream
         context become waiting
 
