@@ -53,11 +53,7 @@ object Metrics {
   private lazy val urlsSeen    = registry.counter("net.lockney.urlsSeen")
   private lazy val picsSeen    = registry.counter("net.lockney.picsSeen")
 
-  private lazy val registry = {
-    val reg = new MetricRegistry()
-//    JmxReporter.forRegistry(reg).build().start()
-    reg
-  }
+  private lazy val registry = new MetricRegistry()
 
   def countTweet = tweetMeter.mark
 
