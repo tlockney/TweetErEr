@@ -39,7 +39,7 @@ object Metrics {
 
   implicit val statOrdering = new Ordering[Stat] {
     def compare(e1: Stat, e2: Stat) = {
-      val count = (e1.count.get - e2.count.get).toInt
+      val count = (e2.count.get - e1.count.get).toInt
       if (count != 0) count else e1.name.compareTo(e2.name)
     }
   }
@@ -55,7 +55,7 @@ object Metrics {
 
   private lazy val registry = {
     val reg = new MetricRegistry()
-    JmxReporter.forRegistry(reg).build().start()
+//    JmxReporter.forRegistry(reg).build().start()
     reg
   }
 
@@ -91,8 +91,6 @@ object Metrics {
     updateStat(u.getHost, urlStats)
     picDomains.foreach(pd => if (u.getHost.toLowerCase.endsWith(pd)) picsSeen.inc)
   }
-
-  val statSorter = (c1: Product2[_, Long], c2: Product2[_, Long]) => c1._2 > c2._2
 
   def getStats = {
 
